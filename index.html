@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>中国民乐 · 数字乐器馆</title>
+  <meta name="description" content="中国民乐乐器交互图鉴：以数字乐器馆形式呈现二胡、古筝、琵琶、笛子、箫、编钟六件乐器，进入详情可自由缩放乐器图片，浏览历史渊源、构造与形制、流派与风格三大专题。" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23b83a2a'/%3E%3Ctext x='16' y='22' font-size='17' text-anchor='middle' fill='%23fdf3ee' font-family='serif'%3E民%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;500;600;700;900&display=swap" />
+  <link rel="stylesheet" href="styles.css?v=6" />
+</head>
+<body>
+
+  <!-- 开场动画：文字「中国民乐」溶解成花瓣粒子 · 播完丝滑衔接到展厅 -->
+  <div class="intro-stage" id="introStage" aria-hidden="true">
+    <canvas id="introCanvas"></canvas>
+  </div>
+
+  <!-- 背景装饰层：乌篷船（下方）· 樱花枝（右上）· 书法织物（左上，已水平反转）· 水墨竹枝（右缘）· 书法诗句 · 印章 -->
+  <div class="bg-art" aria-hidden="true">
+    <img class="bg-art-ink" src="assets/bg-ink.png" alt="" draggable="false" />
+    <img class="bg-art-blossom" src="assets/bg-blossom.png" alt="" draggable="false" />
+    <img class="bg-art-boat" src="assets/bg-boat.png" alt="" draggable="false" />
+    <img class="bg-art-bamboo" src="assets/bamboo.png" alt="" draggable="false" />
+    <span class="bg-script">大音希声<br />大象无形</span>
+  </div>
+
+  <!-- 动态纤维背景（GhostFibers 原生移植 · 与石蓝淡墨背景融合） -->
+  <div class="bg-fibers" id="bgFibers" aria-hidden="true"></div>
+
+  <!-- 鼠标彩墨拖尾（SplashCursor 原生移植 · 网站风格色） -->
+  <div class="splash-cursor" id="splashCursor" aria-hidden="true"></div>
+
+  <!-- 语言切换按钮（中 / EN） -->
+  <button class="lang-switch" id="langSwitch" type="button" aria-label="切换语言 / Switch language">EN</button>
+
+  <!-- 展厅背景音乐开关：梁祝 · 音量较小 · 可随时关闭 -->
+  <button class="bgm-toggle" id="bgmToggle" type="button" aria-label="关闭背景音乐" title="背景音乐开关">
+    <span class="bgm-ico" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 18V5l12-2v13" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+    </span>
+    <span class="bgm-label" id="bgmLabel">背景音乐 · 梁祝</span>
+  </button>
+
+  <!-- ================= 开头：数字乐器馆展示台 ================= -->
+  <section id="view-showcase" class="view active" aria-label="乐器馆展厅">
+    <header class="site-header">
+      <div class="brand">
+        <span class="brand-seal" aria-hidden="true">民乐馆</span>
+        <div class="brand-text">
+          <h1 class="brand-title" data-i18n="brandTitle">中国民乐 · 数字乐器馆</h1>
+          <p class="brand-sub">CHINESE FOLK INSTRUMENT ARCHIVE</p>
+        </div>
+      </div>
+      <p class="header-hint" data-i18n="headerHint">点击乐器 · 进入乐器详情</p>
+    </header>
+
+    <div class="stage-wrap">
+      <!-- 中央展台：3D 环形乐器轮播 -->
+      <div class="stage stage--carousel">
+        <div class="stage-halo" aria-hidden="true"></div>
+        <div class="stage-carousel" id="stageCarousel" aria-label="乐器轮播"></div>
+        <div class="stage-code" aria-hidden="true">
+          <span id="stageCode">ERHU.001</span>
+        </div>
+      </div>
+
+      <!-- 乐器说明 -->
+      <div class="stage-caption">
+        <p class="caption-cat" id="captionCat">拉弦 · 胡琴之宗</p>
+        <h2 class="caption-name" id="captionName">二胡</h2>
+        <p class="caption-sub" id="captionSub">南胡 · 嗡子</p>
+        <p class="caption-summary" id="captionSummary" aria-live="polite"></p>
+      </div>
+
+      <!-- 乐器切换条（amber 风分段指示） -->
+      <div class="specimen-strip" id="specimenStrip" role="tablist" aria-label="选择乐器"></div>
+
+      <button class="enter-btn" id="enterBtn" type="button">
+        <span data-i18n="enterDetail">进入乐器详情</span>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+
+    <footer class="site-footer">
+      <p data-i18n="footer">中国民乐 · 交互图鉴</p>
+      <p class="footer-note" data-i18n="footerNote">点击中央乐器或下方乐器进入详情；在详情页滚轮缩放乐器图片、拖拽平移，下方专题切换内容</p>
+    </footer>
+  </section>
+
+  <!-- ================= 详情：乐器三区放大交互 ================= -->
+  <section id="view-detail" class="view" aria-label="乐器详情">
+    <header class="detail-header">
+      <button class="back-btn" id="backBtn" type="button">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span data-i18n="backShowcase">返回展厅</span>
+      </button>
+      <div class="detail-title">
+        <span class="detail-code" id="detailCode">ERHU.001</span>
+        <h2 class="detail-name" id="detailName">二胡</h2>
+      </div>
+      <div class="detail-cat" id="detailCat">拉弦 · 胡琴之宗</div>
+    </header>
+
+    <div class="detail-body">
+      <!-- 乐器放大舞台 -->
+      <div class="instrument-stage">
+        <div class="zoom-viewport" id="zoomViewport">
+          <img id="detailImg" class="zoom-img" src="" alt="" draggable="false" />
+          <div class="zoom-toolbar" role="toolbar" aria-label="缩放控制">
+            <button class="zoom-btn" id="zoomOutBtn" type="button" aria-label="缩小">−</button>
+            <button class="zoom-reset" id="zoomReset" type="button" data-i18n="zoomReset">全览</button>
+            <button class="zoom-btn" id="zoomInBtn" type="button" aria-label="放大">＋</button>
+          </div>
+        </div>
+        <p class="zone-legend" id="zoneLegend" data-i18n="zoneLegend">滚轮 / 双指缩放 · 拖拽平移 · 全览复位</p>
+        <div class="zone-tabs" role="tablist" aria-label="三大专题">
+          <button class="zone-tab" data-zone="history" type="button" role="tab"><b data-i18n="zone_history">历史渊源</b><span id="zoneAnchorHistory"></span></button>
+          <button class="zone-tab" data-zone="construction" type="button" role="tab"><b data-i18n="zone_construction">构造与形制</b><span id="zoneAnchorConstruction"></span></button>
+          <button class="zone-tab" data-zone="schools" type="button" role="tab"><b data-i18n="zone_schools">流派与风格</b><span id="zoneAnchorSchools"></span></button>
+        </div>
+        <button class="auto-btn" id="autoBtn" type="button">顺次参观三大专题</button>
+      </div>
+
+      <!-- 专题说明面板 -->
+      <aside class="info-panel" id="infoPanel">
+        <p class="info-intro" id="infoIntro"></p>
+        <div class="info-divider" aria-hidden="true"></div>
+        <h3 class="info-title" id="infoTitle">历史渊源</h3>
+        <p class="info-text" id="infoText"></p>
+        <figure class="info-figure" id="infoFigure" hidden>
+          <img id="infoFigureImg" src="" alt="" />
+          <figcaption id="infoFigureCaption"></figcaption>
+        </figure>
+        <div class="featured-music" id="featuredMusic" hidden>
+          <button class="fm-play" id="fmPlay" type="button" aria-label="播放 / 暂停特色音乐">
+            <span class="fm-label" data-i18n="fmLabel">特色音乐</span>
+            <span class="fm-name" id="featuredName"></span>
+            <span class="fm-state" id="featuredState"></span>
+          </button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <script src="i18n.min.js"></script>
+  <script src="data/instruments.min.js"></script>
+  <script src="holo-card.min.js?v=3"></script>
+  <script src="circular-carousel.min.js?v=1"></script>
+  <script src="ghost-fibers.min.js?v=1"></script>
+  <script src="splash-cursor.min.js?v=1"></script>
+  <script src="intro.min.js?v=1"></script>
+  <script src="app.min.js?v=6"></script>
+</body>
+</html>
